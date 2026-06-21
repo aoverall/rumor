@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+"""rumor: the dispatcher that makes the skill's own vocabulary runnable.
+
+The skill describes commands in command-voice. This is where they become real. It resolves
+the repo root once and supplies the real sink paths to `capture` (so no subcommand can touch
+the real ground truth under test, and the paths stay out of capture.py where the leak-check
+would flag them).
+
+  rumor capture ...     append a labeled reaction to BOTH sinks, atomically (scripts/capture.py)
+  rumor remine          orchestrate the rebuild, halting honestly at each agentic stage (scripts/remine.py)
+  rumor coverage run    walk every source avenue into candidates-all (scripts/coverage_check.py)
+  rumor coverage verify assert no avenue is orphaned, capture names both sinks
+  rumor onboard         first-run discovery (scripts/onboard.sh)
+
+The runtime loop (spine / gate / move) and the grade behind `capture` stay AGENTIC prose in
+SKILL.md: that judgment is the product and a command cannot make it. `remine` is a real
+command but it cannot do its three agentic stages (classify, distill, judge); it runs the
+deterministic stages and halts honestly at each agentic one.
+
+Path overrides: RUMOR_EVAL_SET / RUMOR_LEARNINGS env vars, else repo-relative defaults.
+"""
+import os
+import subprocess
+import sys
+
+REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+PY = sys.executable
+
+
+def _eval_path() -> str:
+    return os.environ.get("RUMOR_EVAL_SET") or os.path.join(REPO, "docs", "eval-set.jsonl")
+
+
+def _learnings_path() -> str:
+    # Repo-relative default (the host-neutral sink named in scripts/sources.jsonl). Keeping
+    # a personal absolute path out of here is what keeps the friend build clean.
+    return os.environ.get("RUMOR_LEARNINGS") or os.path.join(REPO, ".learnings", "LEARNINGS.md")
+
+
+def _help() -> int:
+    print(__doc__.strip())
+    print("\nReal commands: capture, remine, coverage [run|verify], onboard")
+    print("Agentic prose (not commands): the loop (spine/gate/move), the verdict grade")
+    return 0
+
+
+def cmd_capture(rest: list[str]) -> int:
+    sys.path.insert(0, os.path.dirname(__file__))
+    import capture
+    argv = list(rest)
+    if "--eval" not in argv:
+        argv += ["--eval", _eval_path()]
+    if "--learnings" not in argv:
+        argv += ["--learnings", _learnings_path()]
+    return capture.main(argv)
+
+
+def cmd_coverage(rest: list[str]) -> int:
+    sub = rest[0] if rest else "run"
+    if sub not in ("run", "verify"):
+        print("usage: rumor coverage [run|verify]", file=sys.stderr)
+        return 2
+    return subprocess.call([PY, os.path.join(REPO, "scripts", "coverage_check.py"), sub,
+                            "--repo", REPO])
+
+
+def cmd_onboard(rest: list[str]) -> int:
+    return subprocess.call(["bash", os.path.join(REPO, "scripts", "onboard.sh")])
+
+
+def cmd_remine(rest: list[str]) -> int:
+    sys.path.insert(0, os.path.dirname(__file__))
+    import remine
+    return remine.main(["--repo", REPO] + rest)
+
+
+def main(argv: list[str]) -> int:
+    if not argv or argv[0] in ("-h", "--help", "help"):
+        return _help()
+    cmd, rest = argv[0], argv[1:]
+    table = {"capture": cmd_capture, "coverage": cmd_coverage,
+             "onboard": cmd_onboard, "remine": cmd_remine}
+    if cmd not in table:
+        print(f"rumor: unknown command '{cmd}'. Try: capture, remine, coverage, onboard.", file=sys.stderr)
+        return 2
+    return table[cmd](rest)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

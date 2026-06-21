@@ -1,0 +1,22 @@
+# Rumor source-coverage manifest. The ONE enumeration of every taste-signal avenue.
+# onboard.sh and the SKILL "rumor remine" step walk this; coverage_check.py asserts
+# nothing is silently skipped. Adding an extractor without a row here, or a row no step
+# honors, is a named failure (coverage_check.py verify), not a quiet gap.
+#
+# Coverage is deterministic (does every avenue get walked, does every produced sink get
+# folded in). Relevance stays agentic: is-this-a-real-reaction is the discovery Workflow's
+# call, the verdict is the classifier's, which-exemplar-applies is SPINE/GATE reading the
+# cartridge. This file never touches any of that.
+#
+# Every field is read by a walker (no decoration): id, extractor (path or null), argv
+# ({probe} expands to the probe path), probe (existence gate; absent => explicit SKIP,
+# never a failure, so a machine missing a source still runs clean), sink, combine (folds
+# into candidates-all.jsonl for the mine), private (true => stripped from the friend build).
+#
+# --- avenues ---
+{"id": "claude", "extractor": "scripts/extract_claude.py", "argv": ["{probe}"], "probe": "~/.claude/projects", "sink": "docs/candidates-claude.jsonl", "combine": true, "private": false, "note": "Claude Code conversation reactions"}
+{"id": "codex", "extractor": "scripts/extract_codex.py", "argv": ["{probe}"], "probe": "~/.codex/sessions", "sink": "docs/candidates-codex.jsonl", "combine": true, "private": false, "note": "Codex CLI session reactions"}
+{"id": "openclaw", "extractor": "scripts/extract_openclaw.py", "argv": ["extract"], "probe": "~/.openclaw", "sink": "docs/candidates-openclaw.jsonl", "combine": true, "private": false, "note": "OpenClaw agent sessions. combine:true means once extracted it MUST enter candidates-all"}
+{"id": "learnings", "extractor": "scripts/extract_learnings.py", "argv": [], "probe": ".learnings/LEARNINGS.md", "sink": "docs/candidates-learnings.jsonl", "combine": true, "private": false, "note": "pre-labeled corrections (your own), folded into the mine"}
+# --- capture (no extractor; written live by the loop; verify enforces both sinks) ---
+{"id": "capture", "extractor": null, "argv": [], "probe": "on-demand", "sink": "docs/eval-set.jsonl", "sinks": ["docs/eval-set.jsonl", ".learnings/LEARNINGS.md"], "combine": false, "private": false, "note": "on-demand 'rumor capture'. The decision to capture is judgment; the dual-sink WRITE is the invariant verify checks."}
